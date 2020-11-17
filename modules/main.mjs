@@ -34,29 +34,53 @@ class CountStoreProvider extends StoreProvider({count: 0}, {
   'decrement': (state, action) => ({count: state.count - 1})
 })(LitElement) {
   render() {
-    return html`
-      <div>
-        <p>Count: ${this.state.count}</p>
-        <slot></slot>
-      </div>
-    `;
+    return html`<slot></slot>`;
   }
 }
 
 customElements.define('count-provider', CountStoreProvider);
 
+class Counter extends Requester(LitElement) {
+
+  constructor() {
+    super();
+    this.count = 0;
+  }
+
+  connectedCallback() {
+    super.connectedCallback();
+    const store = this.requestInstance('store');
+    this.disconnect = store.subscribe(state => {
+      this.count = state.count;
+      this.requestUpdate();
+    });
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this.disconnect();
+  }
+
+  render() {
+    return html`<p>Count is: ${this.count}</p>`
+  }
+}
+
+customElements.define('count-counter', Counter);
+
 class CountButtons extends Requester(LitElement) {
   connectedCallback() {
     super.connectedCallback();
-    this._store = this.requestInstance('store');
+    const store = this.requestInstance('store');
+    this.dispatch = store.dispatch;
   }
 
   increment(e) {
-    this._store.dispatch(Action('increment'));
+    this.dispatch(Action('increment'));
   }
 
   decrement(e) {
-    this._store.dispatch(Action('decrement'));
+    this.dispatch(Action('decrement'));
   }
 
   render() {
